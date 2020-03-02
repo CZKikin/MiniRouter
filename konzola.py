@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 #=========================================== DHCP =============================================================================================#
 ############################################ loading dns #######################################################################################
 def load_dns():
@@ -21,7 +22,7 @@ def load_dns():
         router_ip = contents[8].strip(";")
         return dnsf, dnss, subnet, mask, starting, ending, broadcast, router_ip
 ############################################ changing & saving dns #############################################################################
-def dns():
+def dns():   #TODO: Merge this with enter_ip()
     entering_dns = True
     while entering_dns:
         try:
@@ -39,7 +40,7 @@ def dns():
                 print("First ip is OK!")
 
             if int(firsta) not in range(0, 256) or int(seconda) not in range(0, 256) or int(thirda) not in range(0, 256) or int(fourtha) not in range(0, 256):
-                print("\033[1;31;40mFirst ip is invalid\033[1;37;40m")
+                print("\033[1;31;40mSecond ip is invalid\033[1;37;40m")
             else:
                 print("Second ip is OK!")
                 entering_dns = False
@@ -83,67 +84,81 @@ def save_dhcp(subnet = None, broadcast=None, mask=None, starting_range=None, end
         dhcpd.write(dhcpd_conf)
 
     global_dnsf, global_dnss, global_subnet, global_mask, global_starting_range, global_ending_range, global_broadcast, global_router_ip = load_dns()
+
+######################################### enter and check IP addr ############################################################################# 
+def enter_ip():
+    entering_subnet = True
+    while entering_subnet:
+                try:
+                    subnet = input("Enter subnet: ")  #Entering IP which is stripped to 4 pieces
+                    subnet = subnet.strip(" ")
+                    first, second, third, fourth = subnet.split(".")
+                    first, second, third, fourth = int(first), int(
+                        second), int(third), int(fourth)
+                except:
+                    print("\033[1;31;40mEnter subnet IP!!! eg.: 192.168.1.0\033[1;37;40m")
+                try:
+                    if first not in range(0, 256) or second not in range(0, 256) or third not in range(0, 256) or fourth not in range(0, 256):
+                        print("\033[1;31;40mInvalid IP\033[1;37;40m")
+                    else:
+                        entering_subnet = False
+                except:
+                    print("\033[1;31;40mCannot calculate ip!!\033[1;37;40m")
+
+    return first, second, third, fourth 
+###################################### enter mask and check it ##################################################################################
+def enter_mask():
+    entering_mask = True
+            mask_octets = [0, 128, 192, 224, 240, 248, 252, 254, 255]
+            while entering_mask:
+                try:
+                    mask = input("Enter mask: ")
+                    mask = mask.strip(" ")
+                    first_m, second_m, third_m, fourth_m = mask.split("."); first_m, second_m, third_m, fourth_m = int(first_m), int(second_m), int(third_m), int(fourth_m)
+                    if first_m not in mask_octets or second_m not in mask_octets or third_m not in mask_octets or fourth_m not in mask_octets:
+                        print("\033[1;31;40mInvalid mask!!!\033[1;37;40m")
+                        continue
+                    else:
+                        if first_m != 255:
+                            if second_m != 0 and third_m != 0 and fourth_m !=0:
+                                print("\033[1;33;40mYour fist octet isn't full, setting your mask to {}.0.0.0\033[1;37;40m".format(first_m))
+                                second_m, third_m, fourth_m = 0, 0, 0
+                                mask = clearstr(mask)
+                                mask += first_m + "." + second_m + "." + third_m + "." + fourth_m
+                            entering_mask = False
+                        elif second_m != 255:
+                            if third_m != 0 and fourth_m !=0:
+                                print("\033[1;33;40mYour second octet isn't full, setting your mask to {}.{}.0.0\033[1;37;40m".format(first_m,second_m))
+                                third_m, fourth_m = 0, 0
+                                mask = clearstr(mask)
+                                mask += first_m + "." + second_m + "." + third_m + "." + fourth_m
+                            entering_mask = False
+                        elif third_m != 255:
+                            if fourth_m !=0:
+                                print("\033[1;33;40mYour third octet isn't full, setting your mask to {}.{}.{}.0\033[1;37;40m".format(first_m,second_m,third_m))
+                                fourth_m = 0
+                                mask = clearstr(mask)
+                                mask += first_m + "." + second_m + "." + third_m + "." + fourth_m
+                            entering_mask = False
+                        else:
+                            entering_mask = False
+                except ValueError:
+                    print("\033[1;31;40mYou have entered bad ip format!\033[1;37;40m")
+                except TypeError:
+                    print("\033[1;31;40mEnter numbers!\033[1;37;40m")
+                except Exception as err_msg:
+                    print("\033[1;31;40m{}!!\033[1;37;40m".format(err_msg))
+
+    return first_m, second_m, third_m, fourth_m
+
+
 ############################################ Entering essential information for dhcpd.conf #####################################################
-def dhcp_config():
+def dhcp_config():   #TODO: Separate this to more functions
     dhcp_config_change_subnet_run = True
     while dhcp_config_change_subnet_run:
-        entering_subnet = True
-        while entering_subnet:
-            try:
-                subnet = input("Enter subnet: ")  #Entering IP which is stripped to 4 pieces
-                subnet = subnet.strip(" ")
-                first, second, third, fourth = subnet.split(".")
-                first, second, third, fourth = int(first), int(
-                    second), int(third), int(fourth)
-            except:
-                print("\033[1;31;40mEnter subnet IP!!! eg.: 192.168.1.0\033[1;37;40m")
-            try:
-                if first not in range(0, 256) or second not in range(0, 256) or third not in range(0, 256) or fourth not in range(0, 256):
-                    print("\033[1;31;40mInvalid IP\033[1;37;40m")
-                else:
-                    entering_subnet = False
-            except:
-                print("\033[1;31;40mCannot calculate ip!!\033[1;37;40m")
-        entering_mask = True
-        mask_octets = [0, 128, 192, 224, 240, 248, 252, 254, 255]
-        while entering_mask:
-            try:
-                mask = input("Enter mask: ")
-                mask = mask.strip(" ")
-                first_m, second_m, third_m, fourth_m = mask.split("."); first_m, second_m, third_m, fourth_m = int(first_m), int(second_m), int(third_m), int(fourth_m)
-                if first_m not in mask_octets or second_m not in mask_octets or third_m not in mask_octets or fourth_m not in mask_octets:
-                    print("\033[1;31;40mInvalid mask!!!\033[1;37;40m")
-                    continue
-                else:
-                    if first_m != 255:
-                        if second_m != 0 and third_m != 0 and fourth_m !=0:
-                            print("\033[1;33;40mYour fist octet isn't full, setting your mask to {}.0.0.0\033[1;37;40m".format(first_m))
-                            second_m, third_m, fourth_m = 0, 0, 0
-                            mask = clearstr(mask)
-                            mask += first_m + "." + second_m + "." + third_m + "." + fourth_m
-                        entering_mask = False
-                    elif second_m != 255:
-                        if third_m != 0 and fourth_m !=0:
-                            print("\033[1;33;40mYour second octet isn't full, setting your mask to {}.{}.0.0\033[1;37;40m".format(first_m,second_m))
-                            third_m, fourth_m = 0, 0
-                            mask = clearstr(mask)
-                            mask += first_m + "." + second_m + "." + third_m + "." + fourth_m
-                        entering_mask = False
-                    elif third_m != 255:
-                        if fourth_m !=0:
-                            print("\033[1;33;40mYour third octet isn't full, setting your mask to {}.{}.{}.0\033[1;37;40m".format(first_m,second_m,third_m))
-                            fourth_m = 0
-                            mask = clearstr(mask)
-                            mask += first_m + "." + second_m + "." + third_m + "." + fourth_m
-                        entering_mask = False
-                    else:
-                        entering_mask = False
-            except ValueError:
-                print("\033[1;31;40mYou have entered bad ip format!\033[1;37;40m")
-            except TypeError:
-                print("\033[1;31;40mEnter numbers!\033[1;37;40m")
-            except Exception as err_msg:
-                print("\033[1;31;40m{}!!\033[1;37;40m".format(err_msg))
+        first, second, third, fourth = enter_ip() 
+        first_m, second_m, third_m, fourth_m = enter_mask() 
+        
         subnet_calculation = []; subnet_calculation.append(first&first_m); subnet_calculation.append(second&second_m); subnet_calculation.append(third&third_m); subnet_calculation.append(fourth&fourth_m)
         not_negated_mask = []; not_negated_mask.append(first_m); not_negated_mask.append(second_m), not_negated_mask.append(third_m), not_negated_mask.append(fourth_m)
         not_negated_mask = ip_list_to_str(not_negated_mask)
@@ -229,7 +244,7 @@ def change_ssid():
 		else:
 			return ssid
 ############################################ Wlan config #######################################################################################
-def wlan_config():
+def wlan_config():   #TODO: Separate this to more functions
     global channel
     global passphrase
     global ssid
@@ -369,32 +384,35 @@ def inputline(name, func = False):
                 print(err)
 ############################################ config ############################################################################################
 def config():
+    print("WTF")
     config_run = True
-    cmds=["wlan","help","cls","exit","dhcp","dns","passwd"]
+    cmds={
+    "wlan": wlan_config,
+    "passwd": lambda: sub.call("passwd minirouter",shell=True),
+    "dhcp": dhcp_config,
+    "dns": lambda: save_dhcp(dns_conf=True),
+    "help": lambda: print(*cmds),   #TODO: Change some commands to be global and use some global dictionary
+    "cls": cls}
+
     while config_run:
         cmd = inputline(ssid, "config")
-        if cmd in cmds:
-            if cmd == "passwd":
-                sub.call("passwd minirouter",shell = True)
-            if cmd == "wlan":
-                wlan_config()
-            if cmd == "help":
-                print(*cmds)
-            if cmd == "cls":
-                cls()
-            if cmd == "exit":
-                config_run=False
-            if cmd == "dhcp":
-                dhcp_config()
-            if cmd == "dns":
-                save_dhcp(dns_conf=True)
-        elif cmd == "" or cmd == " ":
-            pass
-        else:
-            print("\033[1;33;40mUnrecognized command \033[1;37;40m")
+        config_run = run_command(cmd, cmds)
 ############################################ cls ###############################################################################################
 def cls():
 	sub.call("clear", shell=True)
+
+########################################## run_command ##########################################################################################
+def run_command(command, command_dict):
+    if command in command_dict:
+        command_dict[command]()
+    elif command == "":
+        pass
+    elif command == "exit":
+        return False
+    else:
+        print("\033[1;33;40mUnrecognized command \033[1;37;40m")
+    return True
+
 ############################################ Main function #####################################################################################
 import subprocess as sub, getpass as getp, sys, time as t, readline
 print("\033[1;32;40m ")
@@ -411,36 +429,27 @@ print("""
                     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 \033[1;37;40m""")
-cmds = ["config","cls","help","reboot","showcfg","ping","tracert","showdhcpls"]
+
+cmds = {
+"config": config,
+"cls": cls,
+"help": (lambda: print(*cmds)),
+"reboot": (lambda: sub.call("sudo reboot",shell=True)), 
+"showcfg": showcfg,
+"ping": ping,
+"tracert": tracert,
+"showdhcpls":(lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more",shell=True))}
+
+ssid="TESTING - REMOVE ALL TESTING LINES"
+
 run = True
-readline.parse_and_bind("tab: complete")
-readline.set_completer(completer)
-commands = ["config","cls","help","reboot","showcfg","ping","tracert","dhcp","dns","wlan","ssid","passphrase","channel","save","showdhcpls","passwd"]
-ssid, passphrase, channel= load_hostapd()
-global_dnsf, global_dnss, global_subnet, global_mask, global_starting_range, global_ending_range, global_broadcast, global_router_ip = load_dns()
+#readline.parse_and_bind("tab: complete")
+#readline.set_completer(completer)
+#commands = ["config","cls","help","reboot","showcfg","ping","tracert","dhcp","dns","wlan","ssid","passphrase","channel","save","showdhcpls","passwd"]
+#ssid, passphrase, channel= load_hostapd()
+#global_dnsf, global_dnss, global_subnet, global_mask, global_starting_range, global_ending_range, global_broadcast, global_router_ip = load_dns()
 while run:
     cmd = inputline(ssid)
-    if cmd in cmds:
-        if cmd == "showdhcpls":
-            sub.call("cat /var/lib/dhcp/dhcpd.leases | more",shell=True)
-        if cmd == "config":
-                config()
-        if cmd == "help":
-                print(*cmds)
-        if cmd == "cls":
-                cls()
-        if cmd == "reboot":
-            print("\033[0m 1;37;40m ")
-            cls()
-            sub.call("sudo reboot",shell=True)
-        if cmd == "showcfg":
-            showcfg()
-        if cmd == "ping":
-            ping()
-        if cmd == "tracert":
-            tracert()
-    elif cmd == "" or cmd == " ":
-        pass
-    else:
-        print("\033[1;33;40mUnrecognized command \033[1;37;40m")
+    run = run_command(cmd, cmds)
 #=========================================== MAIN LOOP & Other global stuff end ================================================================#
+
