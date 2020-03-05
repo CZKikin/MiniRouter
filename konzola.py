@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 #Ať se na to dívá kdokoli, plánuju to předělat celý, je to hrůza a děs
 #Novejší verze bude dostupná na https://github.com/CZKikin/MiniRouterProject
-#==================================== DHCP ============================#
-##################################### loading dns ######################
+
 def load_dns():
+    return_variables=[]
     with open("/etc/dhcp/dhcpd.conf", "r")as file:
         contents = file.read()
         contents = contents.splitlines()
@@ -13,33 +13,34 @@ def load_dns():
         contents[12] = contents[12].strip(" ;")
         dnsf, dnss = contents[12].split(",")
         dnss = dnss.strip(" ")
-
+        return_variables.append(dnsf)
+        return_variables.append(dnss)
 
         #ip and mask
         contents[5] = contents[5].replace("subnet ","")
         contents[5] = contents[5].replace("netmask ","")
         contents[5] = contents[5].strip("{")
         subnet, mask = contents[5].split(" ")
-
+        return_variables.append(subnet)
+        return_variables.append(mask)
 
         #starting & ending_range
         contents[6] = contents[6].replace("range ","")
         contents[6] = contents[6].strip(";")
         starting, ending = contents[6].split(" ")
-
+        return_variables.append(starting)
+        return_variables.append(ending)
 
         #Broadcast
         contents[7]=contents[7].replace("option broadcast-address ","")
-        broadcast = contents[7].strip(";")
-
+        return_variables.append(contents[7].strip(";"))
 
         #router ip
         contents[8] = contents[8].replace("option routers ","")
-        router_ip = contents[8].strip(";")
+        return_variables.append(contents[9].strip(";"))
 
-        #TODO: Change return to return list and change it in the whole program
-        return dnsf, dnss, subnet, mask, starting, ending, broadcast, router_ip
-########################## changing & saving dns ##############################
+        return return_variables
+
 def dns():   #TODO: Merge this with enter_ip()
     entering_dns = True
     while entering_dns:
@@ -77,8 +78,9 @@ def dns():   #TODO: Merge this with enter_ip()
 
 
     return dnsf, dnss
-################# save_wlan  to static ########################################
+
 def save_wlan(ip,mask):
+    print("SAVE WLAN IS ON TEST :83") 
     with open("/etc/network/interfaces","w") as inter:
         inter_str = "source-directory /etc/network/interfaces.d\nauto "\
 "lo\niface lo inet loopback\nallow-hotplug wlan0\niface "\
@@ -87,7 +89,7 @@ def save_wlan(ip,mask):
         inter.write(inter_str)
         print("\033[1;33;40mdhcp saved, to apply changes "
               "restart the device\033[1;37;40m")
-################ save_dhcp ####################################################
+
 def save_dhcp(subnet = None, broadcast=None, mask=None,
                   starting_range=None, ending_range=None,
                   router_ip=None, dns_conf=False
@@ -123,9 +125,14 @@ def save_dhcp(subnet = None, broadcast=None, mask=None,
 + dnsf +", " + dnss +";\n}"
         dhcpd.write(dhcpd_conf)
 
-    global_dnsf, global_dnss, global_subnet, global_mask, global_starting_range, global_ending_range, global_broadcast, global_router_ip = load_dns()
+    loaded_data = load_dns()
+    global_subnet = loaded_data[0]
+    global_mask = loaded_data[1]
+    global_starting_range = loaded_data[2]
+    global_ending_range = loaded_data[3]
+    global_broadcast = loaded_data[4]
+    global_router_ip = loaded_data[5]
 
-############### enter and check IP addr #######################################
 def enter_ip():
     entering_subnet = True
     while entering_subnet:
@@ -140,8 +147,8 @@ def enter_ip():
 "192.168.1.0\033[1;37;40m")
                 try:
                     if (first not in range(0, 256) 
-			or second not in range(0, 256) 
-			or third not in range(0, 256) 
+      or second not in range(0, 256) 
+      or third not in range(0, 256) 
                         or fourth not in range(0, 256)
                        ):
                         print("\033[1;31;40mInvalid IP\033[1;37;40m")
@@ -151,7 +158,7 @@ def enter_ip():
                     print("\033[1;31;40mCannot calculate ip!!\033[1;37;40m")
 
     return first, second, third, fourth 
-############### enter mask and check it #######################################
+
 def enter_mask():
     entering_mask = True
     mask_octets = [0, 128, 192, 224, 240, 248, 252, 254, 255]
@@ -206,8 +213,6 @@ def enter_mask():
 
     return first_m, second_m, third_m, fourth_m
 
-
-####################### Entering essential information for dhcpd.conf #########
 def dhcp_config():   #TODO: Separate this to more functions
     dhcp_config_change_subnet_run = True
     while dhcp_config_change_subnet_run:
@@ -273,11 +278,7 @@ ending_range_str, router_ip_str)
             save_wlan(router_ip_str,not_negated_mask)
         else:
             print("Error at calculating dhcp subnet")
-#====================== DHCP END =============================================#
 
-
-#====================== WLAN =================================================#
-###################### check_channels #########################################
 def check_channels():
     free = []
     print("""\n-----------------------------
@@ -304,9 +305,9 @@ Looking for free channels...
         if atleast:
             print("\033[1;31;40mNo free channels, here is list of channels"\
 " and number of hotspots.\n{}\033[1;37;40m".format(a))
-################## Save Hostapd ################################################
+
 def save_hostapd(ssid,channel,wpa_passphrase):
-    try:   #TODO: Use format method to save files
+    try:   #TODO: Use str.format method to save files
         with open("/etc/hostapd/hostapd.conf","w") as file:
             hostapd_config="interface=wlan0\n"+"#driver=rtl871xdrv\n"+"ssid="+\
 str(ssid)+"\n"+"country_code=US\n"+"hw_mode=g\n"+"channel="+\
@@ -318,25 +319,25 @@ str(channel)+"\n"+"macaddr_acl=0\n"+"auth_algs=1\n"+"ignore_broadcast_ssid=0\n"\
     except Exception as err:
         print(err)
     print("Wlan conf was saved, to apply changes restart the device")
-############## Load Hostapd ####################################################
+
 def load_hostapd():
-	with open("/etc/hostapd/hostapd.conf","r") as file:
-		contents = file.read()
-		contents = contents.splitlines()
-		ssid = contents[2].replace("ssid=","")
-		passphrase = contents[10].replace("wpa_passphrase=","")
-		channel = contents[5].replace("channel=","")
-		return ssid, passphrase, channel
-#################### Change_ssid ###############################################
+    with open("/etc/hostapd/hostapd.conf","r") as file:
+        contents = file.read()
+        contents = contents.splitlines()
+        ssid = contents[2].replace("ssid=","")
+        passphrase = contents[10].replace("wpa_passphrase=","")
+        channel = contents[5].replace("channel=","")
+    return ssid, passphrase, channel
+
 def change_ssid():
-	ch_ssid_run = True
-	while ch_ssid_run:
-		ssid = input("ssid: ")
-		if ssid == "" or ssid == " " or len(ssid)<3:
-			print("Ssid has to be at least 3 characters long!!!")
-		else:
-			return ssid
-#################### Wlan config ###############################################
+    ch_ssid_run = True
+    while ch_ssid_run:
+        ssid = input("ssid: ")
+    if ssid == "" or ssid == " " or len(ssid)<3:
+        print("Ssid has to be at least 3 characters long!!!")
+    else:
+        return ssid
+
 def wlan_config():   #TODO: Separate this to more functions
     global channel
     global passphrase
@@ -403,32 +404,28 @@ def wlan_config():   #TODO: Separate this to more functions
             pass
         else:
             print("\033[1;33;40mUnrecognized command \033[1;37;40m")
-#===================== WLAN END ===============================================#
 
-
-#=================== MAIN LOOP & Other global stuff ===========================#
-################## completer ###################################################
 def completer(text, state):
     options = [i for i in commands if i.startswith(text)]
     if state < len(options):
         return options[state]
     else:
         return None
-################## tracert #####################################################
+
 def tracert():
     ip = input("Enter host: ")
     try:
         sub.call("traceroute {} -m 20".format(ip),shell=True)
     except Exception as err:
         print(err)
-#################### ping ######################################################
+
 def ping():
     ip = input("Enter host: ")
     try:
         sub.call("ping {} -c 4".format(ip),shell=True)
     except Exception as err:
         print(err)
-################## Show config #################################################
+
 def showcfg():
         with open("/etc/hostapd/hostapd.conf","r") as file:
             contents = file.read()
@@ -446,12 +443,12 @@ def showcfg():
 --------------------------------------------\n\033[1;37;40m""".format(
 channel_sh, pass_sh, contents[6].strip("{"),contents[7].strip(";"),
 contents[8].strip(" ;"),contents[12].strip(" ;")))
-################ clear str #####################################################
+
 def clearstr(string):
     for i in string:
         string = string.strip(i)
     return string
-############# list to str for IP ###############################################
+
 def ip_list_to_str(list):
     turn=0
     ret_str = ""
@@ -462,7 +459,7 @@ def ip_list_to_str(list):
         else:
             ret_str += str(i)
     return ret_str
-########### Input Line #########################################################
+
 def inputline(name, func = False):
     ok = False
     while not ok:
@@ -483,7 +480,7 @@ def inputline(name, func = False):
                 return cmd.lower()
             except Exception as err:
                 print(err)
-####### config #################################################################
+
 def config():
     config_run = True
     cmds={
@@ -497,11 +494,10 @@ def config():
     while config_run:
         cmd = inputline(ssid, "config")
         config_run = run_command(cmd, cmds)
-############################################ cls ###############################
-def cls():
-	sub.call("clear", shell=True)
 
-########################################## run_command #########################
+def cls():
+  sub.call("clear", shell=True)
+
 def run_command(command, command_dict):
     if command in command_dict:
         command_dict[command]()
@@ -513,7 +509,6 @@ def run_command(command, command_dict):
         print("\033[1;33;40mUnrecognized command \033[1;37;40m")
     return True
 
-############################################ Main function #####################
 import subprocess as sub, getpass as getp, sys, time as t, readline
 print("\033[1;32;40m ")
 cls()
@@ -541,6 +536,7 @@ cmds = {
 "showdhcpls":(lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", 
 shell=True))}
 
+print("TESTING.... TESTING ... TESTING ::::")
 ssid="TESTING - REMOVE ALL TESTING LINES"
 
 run = True
@@ -550,10 +546,17 @@ run = True
 #            "dns","wlan","ssid","passphrase","channel","save",
 #            "showdhcpls","passwd"]
 #ssid, passphrase, channel= load_hostapd()
-#global_dnsf, global_dnss, global_subnet, global_mask, global_starting_range, global_ending_range, global_broadcast, global_router_ip = load_dns()
+
+loaded_data = load_dns()
+global_subnet = loaded_data[0]
+global_mask = loaded_data[1]
+global_starting_range = loaded_data[2]
+global_ending_range = loaded_data[3]
+global_broadcast = loaded_data[4]
+global_router_ip = loaded_data[5]
+
 while run:
     cmd = inputline(ssid)
     run = run_command(cmd, cmds)
 print("\033[0m")
 cls()
-#===================== MAIN LOOP & Other global stuff end =====================#
