@@ -1,0 +1,88 @@
+#!/usr/bin/python3
+import subprocess as sub
+
+class Color:
+    RESET = "\033[0m"
+    GREEN = "\033[1;32m"
+    RED = "\033[1;31m"
+    YELLOW = "\033[1;33m"
+
+
+cmdsDict = {
+"install": install,
+"cls": lambda: sub.call("clear", shell=True),
+"help": lambda: print(*cmdsDict),
+"exit": lambda: True,
+"reboot": lambda: sub.call("reboot",shell=True), 
+#"config": config,
+#"showcfg": showcfg,
+#"ping": ping,
+#"tracert": tracert,
+"showdhcpls":(lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True))
+}
+
+def getCmd():
+        cmd = input(f"{ssid}>>> ")
+        return cmd.lower()
+
+def runCmd(cmd):
+    if cmd in cmdsDict:
+        return cmdsDict[cmd]()
+    else:
+        print(f"{Color.YELLOW}Unrecognized command{Color.RESET}")
+    return False 
+
+def dnsWrite(stirng):
+    with open("/etc/dhcp/dhcpd.conf", "w"):
+        f.write(string)
+
+def install():
+    print(f"""{Color.YELLOW}Installing dependencies root privilages will be needed
+Packages to install are: hostapd, iptables-persistent, isc-dhcp-server{Color.RESET}""")
+    sub.call("sudo apt install hostapd iptables-persistent isc-dhcp-server", shell=True)
+
+    print(f"{Color.YELLOW}Creating dhcp configuration{Color.RESET}")
+    dnsWrite("""ddns-update-style none;
+default-lease-time 600;
+max-lease-time 7200;
+authoritative;
+log-faility local7;
+subnet 192.168.42.0 netmask 255.255.255.0 {
+range 192.168.42.2 192.168.42.254;
+option broadcast-address 192.168.42.255;
+option routers 192.168.42.1;
+default-lease-time 21600;
+max-lease-time 43200;
+option domain-name "local";
+option domain-name-servers 8.8.8.8, 8.8.4.4;
+}""")
+
+    wlan = str(input("Enter wlan interface eg. wlan0: "))
+    with open(,"r+") as f:
+        lines = f.readlines()
+        for i in lines:
+            if "INTERFACES" in i:
+                i = "INTERFACES=
+
+
+def load_hostapd():
+    try:
+        with open("/etc/hostapd/hostapd.conf","r") as file:
+            contents = file.read()
+            contents = contents.splitlines()
+        return contents[2].replace("ssid=",""),\
+               contents[10].replace("wpa_passphrase=",""),\
+               contents[5].replace("channel=","")
+    except FileNotFoundError:
+        print(f"{Color.RED}No configuration found!{Color.RESET}")
+        return "NOTFOUND", "NOPASSWD", 0
+    except Exception as e:
+        print(f"{Color.RED}Unexpected error in loadHostapd.{color.RESET}") 
+
+ssid, passphrase, channel = load_hostapd()
+
+quitFlag = False 
+while not quitFlag:
+    cmd = getCmd()
+    if cmd != "":
+        quitFlag = runCmd(cmd)
