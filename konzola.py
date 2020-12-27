@@ -21,8 +21,8 @@ cmdsDict = {
 "showdhcpls":(lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True))
 }
 
-def getCmd():
-        cmd = input(f"{ssid}>>> ")
+def getCmd(confDict):
+        cmd = input(f"{confDict['ssid']}>>> ")
         return cmd.lower()
 
 def runCmd(cmd):
@@ -92,6 +92,6 @@ if __name__=="__main__":
 
     quitFlag = False 
     while not quitFlag:
-        cmd = getCmd()
+        cmd = getCmd(runningConf)
         if cmd != "":
             quitFlag = runCmd(cmd)
