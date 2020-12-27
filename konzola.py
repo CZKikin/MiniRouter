@@ -34,7 +34,7 @@ def runCmd(cmd):
 def dhcpWrite(configDict):
     broadcast = configDict["rangeEnd"]
     broadcast = broadcast[:-1] + str(int(broadcast[-1]) + 1)
-    with open("/etc/dhcp/dhcpd.conf", "w"):
+    with open("/etc/dhcp/dhcpd.conf", "w") as f:
         f.write(f"""ddns-update-style none;
 default-lease-time 600;
 max-lease-time 7200;
