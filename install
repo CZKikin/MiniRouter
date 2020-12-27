@@ -9,10 +9,10 @@ def setDhcpIface(configDict):
 
 def setStaticIp(configDict):
     with open("/etc/network/interfaces","w") as f:
-        f.write("""source-directory /etc/network/interfaces.d
+        f.write(f"""source-directory /etc/network/interfaces.d
 auto lo
 iface lo inet loopback
-allow-hotplug {configDict["iface"] 
+allow-hotplug {configDict["iface"]}
 iface {configDict["iface"]} inet static
     address {configDict["ip"]}
     netmask {configDict["mask"]}

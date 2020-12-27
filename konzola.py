@@ -53,7 +53,7 @@ option domain-name-servers {configDict["dns1"]}, {configDict["dns2"]};
 
 def hostapdWrite(configDict):
     with open("/etc/hostapd/hostapd.conf", "w") as f:
-        f.write("""interface={configDict["iface"]}
+        f.write(f"""interface={configDict["iface"]}
 ssid={configDict["ssid"]}
 country_code=US
 hw_mode=g
@@ -74,10 +74,10 @@ def hostapdLoad(confDict):
         with open("/etc/hostapd/hostapd.conf","r") as file:
             contents = file.read()
             contents = contents.splitlines()
-            confDict["iface"] = contents[1].replace("interface=","")
-            confDict["ssid"] = contents[2].replace("ssid=",""),
-            confDict["passphrase"] = contents[10].replace("wpa_passphrase=",""),
-            confDict["channel"] = contents[5].replace("channel=","")
+            confDict["iface"] = contents[0].replace("interface=","")
+            confDict["ssid"] = contents[1].replace("ssid=",""),
+            confDict["passphrase"] = contents[9].replace("wpa_passphrase=",""),
+            confDict["channel"] = contents[4].replace("channel=","")
         return True
     except FileNotFoundError:
         print(f"{Color.RED}No configuration found!{Color.RESET}")
