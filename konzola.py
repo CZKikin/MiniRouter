@@ -75,14 +75,14 @@ def hostapdLoad(confDict):
             contents = file.read()
             contents = contents.splitlines()
             confDict["iface"] = contents[0].replace("interface=","")
-            confDict["ssid"] = contents[1].replace("ssid=",""),
-            confDict["passphrase"] = contents[9].replace("wpa_passphrase=",""),
+            confDict["ssid"] = contents[1].replace("ssid=","")
+            confDict["passphrase"] = contents[9].replace("wpa_passphrase=","")
             confDict["channel"] = contents[4].replace("channel=","")
         return True
     except FileNotFoundError:
         print(f"{Color.RED}No configuration found!{Color.RESET}")
     except Exception as e:
-        print(f"{Color.RED}Unexpected error in hostapdLoad.{color.RESET}") 
+        print(f"{Color.RED}Unexpected error in hostapdLoad.\n{e}{color.RESET}") 
     return False
 
 if __name__=="__main__":
