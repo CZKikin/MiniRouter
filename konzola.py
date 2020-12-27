@@ -8,19 +8,6 @@ class Color:
     RED = "\033[1;31m"
     YELLOW = "\033[1;33m"
 
-cmdsDict = {
-"cls": lambda: sub.call("clear", shell=True),
-"help": lambda: print(*cmdsDict),
-"exit": lambda: True,
-"reboot": lambda: sub.call("reboot",shell=True), 
-"save": save,
-#"change-ssid"
-#"change-dns"
-#"change-ip"
-"showcfg": lambda: print(runningConf),
-"showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
-}
-
 def getCmd(confDict):
     if confDict["change"]:
         cmd = input(f"{Color.YELLOW}{confDict['ssid']}{Color.reset}>!> ")
@@ -134,6 +121,19 @@ def hostapdLoad(confDict):
     return False
 
 if __name__=="__main__":
+    cmdsDict = {
+        "cls": lambda: sub.call("clear", shell=True),
+        "help": lambda: print(*cmdsDict),
+        "exit": lambda: True,
+        "reboot": lambda: sub.call("reboot",shell=True), 
+        "save": save,
+        #"change-ssid"
+        #"change-dns"
+        #"change-ip"
+        "showcfg": lambda: print(runningConf),
+        "showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
+    }
+
     runningConf = {"change": False}
     if not hostapdLoad(runningConf):
        sys.exit(f"{Color.RED}Failed to load AP config!{Color.RESET}") 
