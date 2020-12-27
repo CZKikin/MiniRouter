@@ -252,8 +252,8 @@ def changePass(confDict):
     if len(passwd) < 8:
         print(f"{Color.YELLOW}Entered passphrase is too short. Min. 8 chars!{Color.RESET}")
         return
-    confDict("passhprase") = passwd
-    confDict("change") = True
+    confDict["passhprase"] = passwd
+    confDict["change"] = True
 
 if __name__=="__main__":
     cmdsDict = {
@@ -266,7 +266,7 @@ if __name__=="__main__":
         "change-dns": lambda: changeDns(runningConf),
         "change-subnet": lambda: changeSubnet(runningConf),
         "change-channel": lambda: changeChannel(runningConf),
-        "change-pass": lambda changePass(runningConf),
+        "change-pass": lambda: changePass(runningConf),
         "showcfg": lambda: print(runningConf),
         "showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
     }
