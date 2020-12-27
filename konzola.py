@@ -15,10 +15,8 @@ cmdsDict = {
 "exit": lambda: True,
 "reboot": lambda: sub.call("reboot",shell=True), 
 #"config": config,
-#"showcfg": showcfg,
-#"ping": ping,
-#"tracert": tracert,
-"showdhcpls":(lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True))
+"showcfg": lambda: print(runningConf),
+"showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
 }
 
 def getCmd(confDict):
