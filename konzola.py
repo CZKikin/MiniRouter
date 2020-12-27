@@ -10,22 +10,23 @@ class Color:
 
 def getCmd(confDict):
     if confDict["change"]:
-        cmd = input(f"{Color.YELLOW}{confDict['ssid']}{Color.reset}>!> ")
+        cmd = input(f"{Color.YELLOW}{confDict['ssid']}{Color.RESET}>!> ")
     else:
-        cmd = input(f"{Color.GREEN}{confDict['ssid']}{Color.reset}>>> ")
-    return cmd.lower()
+        cmd = input(f"{Color.GREEN}{confDict['ssid']}{Color.RESET}>>> ")
+    return cmd.strip().lower()
 
 def runCmd(cmd):
     if cmd in cmdsDict:
         return cmdsDict[cmd]()
     else:
-        print(f"{Color.YELLOW}Unrecognized command{Color.RESET}")
+        print(f"{Color.YELLOW}Unrecognized command '{cmd}'{Color.RESET}")
     return False 
 
 def save(configDict):
     saveIfaceConf(configDict)
     dhcpWrite(configDict)
     hostapdWrite(configDict)
+    configDict["change"] = False
 
 def saveIfaceConf(configDict):
     with open("/etc/network/interfaces","w") as f:
@@ -63,27 +64,24 @@ def dhcpLoad(configDict):
             contents = file.readlines()
             
             #DNS IP
-            contents[12] = contents[12].replace("option domain-name-servers ","").strip(" ;")
+            contents[12] = contents[12].replace("option domain-name-servers ","").replace(";","")
             configDict["dns1"], configDict["dns2"] = contents[12].split(",")
             configDict["dns1"] = configDict["dns1"].strip()
             configDict["dns2"] = configDict["dns2"].strip()
 
             #Device IP
-            contents[5] = contents[5].replace("subnet ","")
-            contents[5] = contents[5].replace("netmask ","")
-            contents[5] = contents[5].strip("{")
+            contents[5] = contents[5].replace("subnet ","").replace("netmask ","").replace("{","").strip()
             configDict["subnet"], configDict["mask"] = contents[5].split(" ")
-            configDict["ip"] = str(int(configDict["subnet"][:-1]) + 1)
+            configDict["ip"] = configDict["subnet"][:-1] + str(int(configDict["subnet"][-1]) + 1)
 
             #Dhcp range
-            contents[6] = contents[6].replace("range ","")
-            contents[6] = contents[6].strip(";")
+            contents[6] = contents[6].replace("range ","").replace(";","").strip()
             configDict["rangeStart"], configDict["rangeEnd"] = contents[6].split(" ")
         return True
     except FileNotFoundError:
         print(f"{Color.RED}No configuration found!{Color.RESET}")
     except Exception as e:
-        print(f"{Color.RED}Unexpected error in dhcpLoad.\n{e}{color.RESET}") 
+        print(f"{Color.RED}Unexpected error in dhcpLoad.\n{e}{Color.RESET}") 
     return False
 
 def hostapdWrite(configDict):
@@ -126,7 +124,7 @@ if __name__=="__main__":
         "help": lambda: print(*cmdsDict),
         "exit": lambda: True,
         "reboot": lambda: sub.call("reboot",shell=True), 
-        "save": save,
+        "save": lambda: save(runningConf),
         #"change-ssid"
         #"change-dns"
         #"change-ip"
