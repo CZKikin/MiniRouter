@@ -8,6 +8,17 @@ class Color:
     RED = "\033[1;31m"
     YELLOW = "\033[1;33m"
 
+def printLogo():
+    print(f"""{Color.GREEN}@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@                                      @
+@     |\\\\  /||  ||  |\\\\    ||  ||      @
+@     ||\\\\//||  ||  ||\\\\   ||  ||      @
+@     ||    || ROUTER  \\\\  ||  ||      @
+@     ||    ||  ||  ||  \\\\ ||  ||      @
+@     ||    ||  ||  ||   \\\\||  ||      @
+@                                      @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@{Color.RESET}""")
+
 def getCmd(confDict):
     if confDict["change"]:
         cmd = input(f"{Color.YELLOW}{confDict['ssid']}{Color.RESET}>!> ")
@@ -252,7 +263,7 @@ def changePass(confDict):
     if len(passwd) < 8:
         print(f"{Color.YELLOW}Entered passphrase is too short. Min. 8 chars!{Color.RESET}")
         return
-    confDict["passhprase"] = passwd
+    confDict["passphrase"] = passwd
     confDict["change"] = True
 
 if __name__=="__main__":
@@ -270,6 +281,8 @@ if __name__=="__main__":
         "showcfg": lambda: print(runningConf),
         "showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
     }
+    
+    printLogo();
 
     runningConf = {"change": False}
     if not hostapdLoad(runningConf):
