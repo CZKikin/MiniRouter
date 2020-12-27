@@ -8,20 +8,25 @@ class Color:
     RED = "\033[1;31m"
     YELLOW = "\033[1;33m"
 
-
 cmdsDict = {
 "cls": lambda: sub.call("clear", shell=True),
 "help": lambda: print(*cmdsDict),
 "exit": lambda: True,
 "reboot": lambda: sub.call("reboot",shell=True), 
-#"config": config,
+"save": save,
+#"change-ssid"
+#"change-dns"
+#"change-ip"
 "showcfg": lambda: print(runningConf),
 "showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
 }
 
 def getCmd(confDict):
-        cmd = input(f"{confDict['ssid']}>>> ")
-        return cmd.lower()
+    if confDict["change"]:
+        cmd = input(f"{Color.YELLOW}{confDict['ssid']}{Color.reset}>!> ")
+    else:
+        cmd = input(f"{Color.GREEN}{confDict['ssid']}{Color.reset}>>> ")
+    return cmd.lower()
 
 def runCmd(cmd):
     if cmd in cmdsDict:
@@ -29,6 +34,22 @@ def runCmd(cmd):
     else:
         print(f"{Color.YELLOW}Unrecognized command{Color.RESET}")
     return False 
+
+def save(configDict):
+    saveIfaceConf(configDict)
+    dhcpWrite(configDict)
+    hostapdWrite(configDict)
+
+def saveIfaceConf(configDict):
+    with open("/etc/network/interfaces","w") as f:
+        f.write(f"""source-directory /etc/network/interfaces.d
+auto lo
+iface lo inet loopback
+allow-hotplug {configDict["iface"]}
+iface {configDict["iface"]} inet static
+    address {configDict["ip"]}
+    netmask {configDict["mask"]}
+""")
 
 def dhcpWrite(configDict):
     broadcast = configDict["rangeEnd"]
@@ -48,6 +69,35 @@ max-lease-time 43200;
 option domain-name "local";
 option domain-name-servers {configDict["dns1"]}, {configDict["dns2"]};
 }}""")
+
+def dhcpLoad(configDict):
+    try:
+        with open("/etc/dhcp/dhcpd.conf", "r")as file:
+            contents = file.readlines()
+            
+            #DNS IP
+            contents[12] = contents[12].replace("option domain-name-servers ","").strip(" ;")
+            configDict["dns1"], configDict["dns2"] = contents[12].split(",")
+            configDict["dns1"] = configDict["dns1"].strip()
+            configDict["dns2"] = configDict["dns2"].strip()
+
+            #Device IP
+            contents[5] = contents[5].replace("subnet ","")
+            contents[5] = contents[5].replace("netmask ","")
+            contents[5] = contents[5].strip("{")
+            configDict["subnet"], configDict["mask"] = contents[5].split(" ")
+            configDict["ip"] = str(int(configDict["subnet"][:-1]) + 1)
+
+            #Dhcp range
+            contents[6] = contents[6].replace("range ","")
+            contents[6] = contents[6].strip(";")
+            configDict["rangeStart"], configDict["rangeEnd"] = contents[6].split(" ")
+        return True
+    except FileNotFoundError:
+        print(f"{Color.RED}No configuration found!{Color.RESET}")
+    except Exception as e:
+        print(f"{Color.RED}Unexpected error in dhcpLoad.\n{e}{color.RESET}") 
+    return False
 
 def hostapdWrite(configDict):
     with open("/etc/hostapd/hostapd.conf", "w") as f:
@@ -84,9 +134,11 @@ def hostapdLoad(confDict):
     return False
 
 if __name__=="__main__":
-    runningConf = {}
+    runningConf = {"change": False}
     if not hostapdLoad(runningConf):
        sys.exit(f"{Color.RED}Failed to load AP config!{Color.RESET}") 
+    if not dhcpLoad(runningConf):
+       sys.exit(f"{Color.RED}Failed to load DHCP config!{Color.RESET}") 
 
     quitFlag = False 
     while not quitFlag:
