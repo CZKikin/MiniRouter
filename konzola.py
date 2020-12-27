@@ -53,7 +53,6 @@ option domain-name-servers {configDict["dns1"]}, {configDict["dns2"]};
 def setDhcpIface(configDict):
     with open("/etc/default/isc-dhcp-server","w") as f:
         f.write(f'INTERFACESv4={configDict["iface"]}')
-    return iface
 
 def setStaticIp(configDict):
     with open("/etc/network/interfaces","w") as f:
