@@ -83,8 +83,7 @@ def hostapdLoad(confDict):
         print(f"{Color.RED}No configuration found!{Color.RESET}")
     except Exception as e:
         print(f"{Color.RED}Unexpected error in hostapdLoad.{color.RESET}") 
-    finally:
-        return False
+    return False
 
 if __name__=="__main__":
     runningConf = {}
