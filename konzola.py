@@ -149,8 +149,8 @@ def hostapdLoad(confDict):
 
 def changeSsid(confDict):
     ssid = str(input("Enter Ssid: "))
-    if len(ssid < 2) or len(ssid > 32):
-        print("{Color.RED}SSID has to be at least 3 characters LONG!{Color.RESET}")
+    if len(ssid) < 2 or len(ssid) > 32:
+        print(f"{Color.RED}SSID has to be at least 3 characters LONG!{Color.RESET}")
         return
 
     confDict["ssid"] = ssid

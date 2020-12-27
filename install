@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import subprocess as sub
+import sys
 from konzola import Color
 import konzola
 
@@ -10,7 +11,12 @@ def setDhcpIface(configDict):
 def install():
     print(f"""{Color.YELLOW}Installing dependencies root privilages will be needed
 Packages to install are: hostapd, iptables-persistent, isc-dhcp-server{Color.RESET}""")
-    sub.call("sudo apt install hostapd iptables-persistent isc-dhcp-server", shell=True)
+    try:
+        sub.check_output("sudo apt install hostapd iptables-persistent isc-dhcp-server", shell=True)
+    except Exception as e:
+        print(f"{Color.RED}{e}{Color.RESET}")
+        sys.exit("Failed to Install dependencies")
+        
 
     iface = str(input("Enter wlan interface eg. wlan0: "))
     defaultConf={"iface": iface,
@@ -29,9 +35,6 @@ Packages to install are: hostapd, iptables-persistent, isc-dhcp-server{Color.RES
 
     print(f"{Color.YELLOW}Setting dhcp interface{Color.RESET}")
     setDhcpIface(defaultConf)
-
-    print(f"{Color.YELLOW}Turning off interface {iface}{Color.RESET}")
-    sub.call("sudo ifdown {iface}", shell=True)
 
     print(f"{Color.YELLOW}Setting static IP address{Color.RESET}")
     konzola.saveIfaceConf(defaultConf)
