@@ -223,6 +223,38 @@ def changeSubnet(confDict):
     confDict["mask"] = mask 
     confDict["change"] = True
 
+def changeChannel(confDict):
+    try:
+        channels = sub.check_output("sudo iwlist wlan0 scan | grep Channel:",shell=True)\
+                .split("\n").replace("Channel:","").strip()
+    except Exception as e:
+        print(f"{Color.RED}{e}{Color.RESET}")
+        return
+        
+    channelDict={"1":0, "2":0, "3":0, "4":0, "5":0, "6":0, "7":0, "8":0, "9":0,
+        "10":0, "11":0, "12":0, "13":0}
+
+    for i in channels:
+        channelDict[i] += 1
+
+    print(f"Found APs on channels: {channelDict}")
+
+    channel = str(input("Enter channel: "))
+    try:
+        confDict["channel"] = channel if int(channel) > 0 and int(channel) < 14 else\
+                print(f"{Color.YELLOW}Entered channel is not valid!{Color.RESET}")
+        confDict["change"] = True
+    except:
+        print(f"{Color.YELLOW}Entered channel is not valid!{Color.RESET}")
+
+def changePass(confDict):
+    passwd = str(input("Enter passhprase: "))
+    if len(passwd) < 8:
+        print(f"{Color.YELLOW}Entered passphrase is too short. Min. 8 chars!{Color.RESET}")
+        return
+    confDict("passhprase") = passwd
+    confDict("change") = True
+
 if __name__=="__main__":
     cmdsDict = {
         "cls": lambda: sub.call("clear", shell=True),
@@ -233,6 +265,8 @@ if __name__=="__main__":
         "change-ssid": lambda: changeSsid(runningConf),
         "change-dns": lambda: changeDns(runningConf),
         "change-subnet": lambda: changeSubnet(runningConf),
+        "change-channel": lambda: changeChannel(runningConf),
+        "change-pass": lambda changePass(runningConf),
         "showcfg": lambda: print(runningConf),
         "showdhcpls": lambda: sub.call("cat /var/lib/dhcp/dhcpd.leases | more", shell=True)
     }
