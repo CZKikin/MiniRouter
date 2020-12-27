@@ -1,0 +1,71 @@
+#!/usr/bin/python3
+import subprocess as sub
+from konzola import Color
+import konzola
+
+def install():
+    print(f"""{Color.YELLOW}Installing dependencies root privilages will be needed
+Packages to install are: hostapd, iptables-persistent, isc-dhcp-server{Color.RESET}""")
+    sub.call("sudo apt install hostapd iptables-persistent isc-dhcp-server", shell=True)
+
+    iface = str(input("Enter wlan interface eg. wlan0: "))
+    defaultConf={"iface": iface,
+            "ip": "192.168.42.1",
+            "mask": "255.255.255.0",
+            "subnet": "192.168.42.0", 
+            "rangeStart": "192.168.42.2",
+            "rangeEnd": "192.168.42.254",
+            "dns1": "8.8.8.8",
+            "dns2": "8.8.4.4",
+            "ssid": "MiniRouterByKikin",
+            "passphrase": "1am53CR3T",
+            "channel": "1"}
+
+    print(f"{Color.YELLOW}Creating dhcp configuration{Color.RESET}")
+    konzola.dhcpWrite(defaultConf)
+
+    print(f"{Color.YELLOW}Setting dhcp interface{Color.RESET}")
+    konzola.setDhcpIface(defaultConf)
+
+    print(f"{Color.YELLOW}Turning off interface {iface}{Color.RESET}")
+    sub.call("sudo ifdown {iface}", shell=True)
+
+    print(f"{Color.YELLOW}Setting static IP address{Color.RESET}")
+    konzola.setStaticIp(defaultConf)
+
+    print(f"{Color.YELLOW}Configuring hostapd{Color.RESET}")
+    konzola.hostapdWrite(defaultConf)
+
+    print(f"{Color.YELLOW}Propagate config hostapd{Color.RESET}")
+    with open("/etc/default/hostapd","r+") as f:
+        lines = readlines()
+        for line in lines:
+            if line == '#DAEMON_CONF=""':
+                line = 'DAEMON_CONF="/etc/hostapd/hostapd.conf"'
+                break;
+
+    with open("/etc/init.d/hostapd", "r+") as f:
+        lines = readlines()
+        for line in lines:
+            if line == "DAEMON_CONF=":
+                line = "DAEMON_CONF=/etc/hostapd/hostapd.conf"
+                break;
+
+
+    print(f"{Color.YELLOW}Setting ipv4 forwarding...{Color.RESET}")
+    with open("/etc/sysctl.conf", "a") as f:
+        f.write("net.ipv4.ip_forward=1")
+
+    sub.call('sudo sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"', shell=True)
+
+    eth = str(input("Enter eth interface: "))
+    print(f"{Color.YELLOW}Configuring iptables{Color.RESET}")
+    sub.call(f"sudo iptables -t nat -A POSTROUTING -o {eth} -j MASQUERADE", shell=True)
+    sub.call("sudo iptables -A FORWARD -i {eth} -o {defaultConf['iface']} -m state --state RELATED,ESTABLISHED -j ACCEPT", shell=True)
+    sub.call("sudo iptables -A FORWARD -i {defaultConf['iface']} -o {eth} -j ACCEPT", shell=True)
+    sub.call("sudo iptables -t nat -S", shell=True)
+    sub.call("sudo iptables -S", shell=True)
+    sub.call('sudo sh -c "iptables-save > /etc/iptables/rules.v4"', shell=True)
+
+if __name__=="__main__":
+    install()
