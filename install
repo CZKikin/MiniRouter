@@ -3,6 +3,21 @@ import subprocess as sub
 from konzola import Color
 import konzola
 
+def setDhcpIface(configDict):
+    with open("/etc/default/isc-dhcp-server","w") as f:
+        f.write(f'INTERFACESv4={configDict["iface"]}')
+
+def setStaticIp(configDict):
+    with open("/etc/network/interfaces","w") as f:
+        f.write("""source-directory /etc/network/interfaces.d
+auto lo
+iface lo inet loopback
+allow-hotplug {configDict["iface"] 
+iface {configDict["iface"]} inet static
+    address {configDict["ip"]}
+    netmask {configDict["mask"]}
+""")
+
 def install():
     print(f"""{Color.YELLOW}Installing dependencies root privilages will be needed
 Packages to install are: hostapd, iptables-persistent, isc-dhcp-server{Color.RESET}""")
@@ -25,13 +40,13 @@ Packages to install are: hostapd, iptables-persistent, isc-dhcp-server{Color.RES
     konzola.dhcpWrite(defaultConf)
 
     print(f"{Color.YELLOW}Setting dhcp interface{Color.RESET}")
-    konzola.setDhcpIface(defaultConf)
+    setDhcpIface(defaultConf)
 
     print(f"{Color.YELLOW}Turning off interface {iface}{Color.RESET}")
     sub.call("sudo ifdown {iface}", shell=True)
 
     print(f"{Color.YELLOW}Setting static IP address{Color.RESET}")
-    konzola.setStaticIp(defaultConf)
+    setStaticIp(defaultConf)
 
     print(f"{Color.YELLOW}Configuring hostapd{Color.RESET}")
     konzola.hostapdWrite(defaultConf)

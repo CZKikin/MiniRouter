@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import subprocess as sub
+import sys
 
 class Color:
     RESET = "\033[0m"
@@ -50,21 +51,6 @@ option domain-name "local";
 option domain-name-servers {configDict["dns1"]}, {configDict["dns2"]};
 }}""")
 
-def setDhcpIface(configDict):
-    with open("/etc/default/isc-dhcp-server","w") as f:
-        f.write(f'INTERFACESv4={configDict["iface"]}')
-
-def setStaticIp(configDict):
-    with open("/etc/network/interfaces","w") as f:
-        f.write("""source-directory /etc/network/interfaces.d
-auto lo
-iface lo inet loopback
-allow-hotplug {configDict["iface"] 
-iface {configDict["iface"]} inet static
-    address {configDict["ip"]}
-    netmask {configDict["mask"]}
-""")
-
 def hostapdWrite(configDict):
     with open("/etc/hostapd/hostapd.conf", "w") as f:
         f.write("""interface={configDict["iface"]}
@@ -83,22 +69,27 @@ wpa_group_rekey=86400
 ieee80211n=1
 wme_enabled=1""")
 
-def load_hostapd():
+def hostapdLoad(confDict):
     try:
         with open("/etc/hostapd/hostapd.conf","r") as file:
             contents = file.read()
             contents = contents.splitlines()
-        return contents[2].replace("ssid=",""),\
-               contents[10].replace("wpa_passphrase=",""),\
-               contents[5].replace("channel=","")
+            confDict["iface"] = contents[1].replace("interface=","")
+            confDict["ssid"] = contents[2].replace("ssid=",""),
+            confDict["passphrase"] = contents[10].replace("wpa_passphrase=",""),
+            confDict["channel"] = contents[5].replace("channel=","")
+        return True
     except FileNotFoundError:
         print(f"{Color.RED}No configuration found!{Color.RESET}")
-        return "NOTFOUND", "NOPASSWD", 0
     except Exception as e:
-        print(f"{Color.RED}Unexpected error in loadHostapd.{color.RESET}") 
+        print(f"{Color.RED}Unexpected error in hostapdLoad.{color.RESET}") 
+    finally:
+        return False
 
 if __name__=="__main__":
-    ssid, passphrase, channel = load_hostapd()
+    runningConf = {}
+    if not hostapdLoad(runningConf):
+       sys.exit(f"{Color.RED}Failed to load AP config!{Color.RESET}") 
 
     quitFlag = False 
     while not quitFlag:
